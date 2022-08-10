@@ -7,7 +7,6 @@ const mongoose = require('mongoose')
 const bodyParser = require('body-parser',)
 const cors = require('cors')
 
-
 require('dotenv/config')
 
 /** Parses incoming request bodies in a middleware before the handlers */

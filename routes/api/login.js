@@ -3,6 +3,7 @@ const router = express.Router()
 const bcrypt = require('bcrypt')
 const UserModel = require('../../models/User')
 
+
 router.get('', (req, res) => {
     const saltRounds = 10;
     const myPlaintextPassword = 's0/\/\P4$$w0rD';
@@ -15,40 +16,53 @@ router.get('', (req, res) => {
     });
 })
 
-router.post('/register', (req, res) => {
+router.post('/register', async (req, res) => {
     email = req.body.email
     password = req.body.password
 
-    console.log(checkIfEmailUsed(email))
-    if (checkIfEmailUsed(email)) {
-        console.log('User with ' + email + ' already exists!')
-    } else {
-        const user = new UserModel({ email: email, password: password })
-        user.save(err => {
-            if (err) {
-                console.log(err)
-            }
+    const isEmailUsed = await checkIfEmailUsed()
+
+    if (isEmailUsed) {
+        res.json({
+            "status": false,
+            "message": "Email is already used"
         })
-        console.log('Created new user')
+    } else {
+        createUser(email)
+        res.json({
+            "status": true,
+            "message": "Email created"
+        })
     }
 
-
 })
+module.exports = router
 
-const checkIfEmailUsed = (email) => {
-    UserModel.find({ 'email': email }, (err, users) => {
+function createUser(email) {
+    const user = new UserModel({ email: email, password: password })
+    user.save(err => {
         if (err) {
-            console.log(err)
+            console.log('Error in saving' + err)
+            res.json({
+                "status": false,
+                "message": "Error creating user"
+            })
         }
-        if (users.length) {
-            console.log('true')
-            return true
-        } else {
-            console.log('false')
-            return false
-        }
-
     })
+    console.log('Created new user')
 }
 
-module.exports = router
+async function checkIfEmailUsed() {
+    return await UserModel.findOne({ 'email': email })
+        .then(data => {
+            if (data) {
+                console.log('User with ' + email + ' already exists!')
+                return true
+            } else {
+                return false
+            }
+        })
+        .catch(err => {
+            console.error(err)
+        })
+}
