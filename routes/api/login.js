@@ -28,7 +28,7 @@ router.post('/register', async (req, res) => {
             "message": "Email is already used"
         })
     } else {
-        createUser(email)
+        createUser()
         res.json({
             "status": true,
             "message": "Email created"
@@ -38,19 +38,28 @@ router.post('/register', async (req, res) => {
 })
 module.exports = router
 
-function createUser(email) {
-    const user = new UserModel({ email: email, password: password })
-    user.save(err => {
-        if (err) {
-            console.log('Error in saving' + err)
-            res.json({
-                "status": false,
-                "message": "Error creating user"
+function createUser() {
+    saltRounds = 10
+
+    bcrypt.genSalt(saltRounds, function (err, salt) {
+        bcrypt.hash(password, salt, function (err, hash) {
+            const user = new UserModel({ email: email, password: hash })
+            user.save(err => {
+                if (err) {
+                    console.log('Error in saving' + err)
+                    res.json({
+                        "status": false,
+                        "message": "Error creating user"
+                    })
+                }
+                console.log('Created new user')
             })
-        }
-    })
-    console.log('Created new user')
+        });
+    });
 }
+
+
+
 
 async function checkIfEmailUsed() {
     return await UserModel.findOne({ 'email': email })
