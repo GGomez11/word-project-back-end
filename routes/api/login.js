@@ -30,17 +30,16 @@ router.post('/register', async (req, res) => {
 
     if (isEmailUsed) {
         res.json({
-            "status": false,
+            "createdUser": false,
             "message": "Email is already used"
         })
     } else {
         createUser()
         res.json({
-            "status": true,
-            "message": "Email created"
+            "createdUser": true,
+            "message": "User created"
         })
     }
-
 })
 module.exports = router
 
@@ -54,7 +53,7 @@ function createUser() {
                 if (err) {
                     console.log('Error in saving' + err)
                     res.json({
-                        "status": false,
+                        "createdUser": false,
                         "message": "Error creating user"
                     })
                 }
@@ -63,9 +62,6 @@ function createUser() {
         });
     });
 }
-
-
-
 
 async function checkIfEmailUsed() {
     return await UserModel.findOne({ 'email': email })
