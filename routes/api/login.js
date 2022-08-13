@@ -16,9 +16,15 @@ router.get('', (req, res) => {
     });
 })
 
+
 router.post('/register', async (req, res) => {
-    email = req.body.email
-    password = req.body.password
+    credentials = req.headers.authorization
+    encodedCredentials = credentials.split(' ')[1]
+    bufferObj = Buffer.from(encodedCredentials, "base64")
+    decodedCredentials = bufferObj.toString('utf8')
+
+    email = decodedCredentials.split(':')[0]
+    password = decodedCredentials.split(':')[1]
 
     const isEmailUsed = await checkIfEmailUsed()
 
