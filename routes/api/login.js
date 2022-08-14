@@ -16,6 +16,41 @@ router.get('', (req, res) => {
     });
 })
 
+router.post('/authenticate', async (req, res) => {
+    credentials = req.headers.authorization
+    encodedCredentials = credentials.split(' ')[1]
+    bufferObj = Buffer.from(encodedCredentials, "base64")
+    decodedCredentials = bufferObj.toString('utf8')
+
+    email = decodedCredentials.split(':')[0]
+    password = decodedCredentials.split(':')[1]
+
+    try {
+        data = await UserModel.findOne({ 'email': email })
+    } catch (error) {
+        console.error(error) // from creation or business logic
+    }
+
+    if (data) {
+        match = await bcrypt.compare(password, data.password)
+        if (match) {
+            res.json({
+                "isAuthenticated": true,
+                "message": "Correct password"
+            })
+        } else {
+            res.json({
+                "isAuthenticated": false,
+                "message": "Incorrect password"
+            })
+        }
+    } else {
+        res.json({
+            "message": 'User does not exist with email: ' + email,
+            "isAuthenticated": false
+        })
+    }
+})
 
 router.post('/register', async (req, res) => {
     credentials = req.headers.authorization
