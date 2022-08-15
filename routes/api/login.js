@@ -2,28 +2,10 @@ const express = require('express')
 const router = express.Router()
 const bcrypt = require('bcrypt')
 const UserModel = require('../../models/User')
-
-
-router.get('', (req, res) => {
-    const saltRounds = 10;
-    const myPlaintextPassword = 's0/\/\P4$$w0rD';
-    const someOtherPlaintextPassword = 'not_bacon';
-
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-        bcrypt.hash(myPlaintextPassword, salt, function (err, hash) {
-            res.json({ 'salt': salt, 'hash': hash })
-        });
-    });
-})
+const jwt = require('jsonwebtoken')
 
 router.post('/authenticate', async (req, res) => {
-    credentials = req.headers.authorization
-    encodedCredentials = credentials.split(' ')[1]
-    bufferObj = Buffer.from(encodedCredentials, "base64")
-    decodedCredentials = bufferObj.toString('utf8')
-
-    email = decodedCredentials.split(':')[0]
-    password = decodedCredentials.split(':')[1]
+    extractCredentials(req)
 
     try {
         data = await UserModel.findOne({ 'email': email })
@@ -34,9 +16,11 @@ router.post('/authenticate', async (req, res) => {
     if (data) {
         match = await bcrypt.compare(password, data.password)
         if (match) {
+            accessToken = jwt.sign({"email": email}, process.env.ACCESS_TOKEN_SECRET)
             res.json({
                 "isAuthenticated": true,
-                "message": "Correct password"
+                "message": "Correct password",
+                "accessToken": accessToken
             })
         } else {
             res.json({
@@ -53,13 +37,7 @@ router.post('/authenticate', async (req, res) => {
 })
 
 router.post('/register', async (req, res) => {
-    credentials = req.headers.authorization
-    encodedCredentials = credentials.split(' ')[1]
-    bufferObj = Buffer.from(encodedCredentials, "base64")
-    decodedCredentials = bufferObj.toString('utf8')
-
-    email = decodedCredentials.split(':')[0]
-    password = decodedCredentials.split(':')[1]
+    extractCredentials(req)
 
     const isEmailUsed = await checkIfEmailUsed()
 
@@ -77,6 +55,16 @@ router.post('/register', async (req, res) => {
     }
 })
 module.exports = router
+
+function extractCredentials(req) {
+    credentials = req.headers.authorization
+    encodedCredentials = credentials.split(' ')[1]
+    bufferObj = Buffer.from(encodedCredentials, "base64")
+    decodedCredentials = bufferObj.toString('utf8')
+
+    email = decodedCredentials.split(':')[0]
+    password = decodedCredentials.split(':')[1]
+}
 
 function createUser() {
     saltRounds = 10
