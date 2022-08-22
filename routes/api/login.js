@@ -4,7 +4,25 @@ const bcrypt = require('bcrypt')
 const UserModel = require('../../models/User')
 const jwt = require('jsonwebtoken')
 
-router.post('/authenticate', async (req, res) => {
+router.post('/verify', async (req, res) => {
+    const token = extractToken(req)
+    try {
+        const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        if (isValid !== undefined) {
+            res.json({"isValid": true})
+        } else {
+            res.json({"isValid": false})
+        }
+    } catch(err) {
+        res.json({"error": 'Error verifying token'})
+    }    
+})
+
+function extractToken(req) {
+    return token = req.headers.authorization.split(' ')[1] 
+}
+
+router.post('/login', async (req, res) => {
     extractCredentials(req)
 
     try {
