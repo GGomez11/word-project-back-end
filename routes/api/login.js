@@ -18,13 +18,6 @@ router.post('/verify', async (req, res) => {
     }    
 })
 
-function extractToken(req) {
-    encodedToken = req.headers.authorization 
-    bufferObj = Buffer.from(encodedToken, "base64")
-    decodedCredentials = bufferObj.toString('utf8').split(' ')[1]
-    return decodedCredentials
-}
-
 router.post('/login', async (req, res) => {
     extractCredentials(req)
 
@@ -85,6 +78,13 @@ function extractCredentials(req) {
 
     email = decodedCredentials.split(':')[0]
     password = decodedCredentials.split(':')[1]
+}
+
+function extractToken(req) {
+    encodedToken = req.headers.authorization 
+    bufferObj = Buffer.from(encodedToken, "base64")
+    decodedCredentials = bufferObj.toString('utf8').split(' ')[1]
+    return decodedCredentials
 }
 
 function createUser() {
