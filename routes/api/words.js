@@ -1,6 +1,27 @@
 const express = require('express')
 const router = express.Router()
 const WordModel = require('../../models/Word')
+const token_functions = require('../../services/token_functions')
+const jwt = require('jsonwebtoken')
+
+router.use( async(req, res, next) => {
+    console.log('Time:', Date.now())
+    
+    if(!req.headers.authorization) {
+        res.status(401).json({"message": "Pass Authorization Header"})
+    }
+    
+    const token = token_functions.extractToken(req)
+    try {
+        const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        if (isValid === undefined) {
+            res.status(403).json({"isValid": false})
+        }
+    } catch(err) {
+        res.json({"error": 'Error verifying token'})
+    }    
+    next()
+})
 
 //Get all words 
 router.get('/', (req, res) => {
