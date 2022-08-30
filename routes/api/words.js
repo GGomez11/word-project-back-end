@@ -16,18 +16,21 @@ router.use( async(req, res, next) => {
         const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
         if (isValid === undefined) {
             res.status(403).json({"isValid": false})
+        } else {
+            next()
         }
     } catch(err) {
-        res.json({"error": 'Error verifying token'})
-    }    
-    next()
+        res.json({"isValid": false,
+                  "message": 'Error verifying token'
+                })
+    }       
 })
 
 //Get all words 
 router.get('/', (req, res) => {
     const instance = WordModel.find()
         .then(data => {
-            res.json(data)
+            res.json({words: data, isValid: true})
         })
         .catch(err => {
             res.json({ message: "Error" })
