@@ -20,9 +20,10 @@ router.use( async(req, res, next) => {
             next()
         }
     } catch(err) {
-        res.json({"isValid": false,
-                  "message": 'Error verifying token'
-                })
+        res.json({
+                "isValid": false,
+                "message": 'Error verifying token'
+            })
     }       
 })
 
