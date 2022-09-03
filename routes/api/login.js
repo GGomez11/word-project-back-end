@@ -3,7 +3,7 @@ const router = express.Router()
 const bcrypt = require('bcrypt')
 const UserModel = require('../../models/User')
 const jwt = require('jsonwebtoken')
-
+const token_functions = require('../../services/token_functions')
 
 router.use((req, res, next) => {
     console.log('Time:', Date.now())
@@ -13,7 +13,7 @@ router.use((req, res, next) => {
 })
 
 router.post('/verify', async (req, res) => {
-    const token = extractToken(req)
+    const token = token_functions.extractToken(req)
     try {
         const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
         if (isValid !== undefined) {
@@ -66,7 +66,7 @@ router.post('/register', async (req, res) => {
     if (isEmailUsed) {
         res.json({
             "createdUser": false,
-            "message": "Email is already used"
+            "message": "Error creating account."
         })
     } else {
         createUser()
@@ -86,13 +86,6 @@ function extractCredentials(req) {
 
     email = decodedCredentials.split(':')[0]
     password = decodedCredentials.split(':')[1]
-}
-
-function extractToken(req) {
-    encodedToken = req.headers.authorization 
-    bufferObj = Buffer.from(encodedToken, "base64")
-    decodedCredentials = bufferObj.toString('utf8').split(' ')[1]
-    return decodedCredentials
 }
 
 function createUser() {
