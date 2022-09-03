@@ -66,7 +66,7 @@ router.post('/register', async (req, res) => {
     if (isEmailUsed) {
         res.json({
             "createdUser": false,
-            "message": "Email is already used"
+            "message": "Error creating account."
         })
     } else {
         createUser()
