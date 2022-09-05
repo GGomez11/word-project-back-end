@@ -2,7 +2,9 @@ const express = require('express')
 const router = express.Router()
 const WordModel = require('../../models/Word')
 const token_functions = require('../../services/token_functions')
+const word_parse_functions = require('../../services/word_parse_functions')
 const jwt = require('jsonwebtoken')
+const axios = require('axios')
 
 router.use( async(req, res, next) => {
     console.log('Time:', Date.now())
@@ -76,20 +78,52 @@ router.delete('/:word', (req, res) => {
 
 /** Post a word */
 router.post('/', (req, res) => {
-    /** creating an instance (document) of WordModel */
-    const instance = new WordModel({
-        word: req.body.word,
-        definitions: req.body.definitions,
-        link: req.body.link,
-    })
-    instance.save()
-        .then(data => {
-            console.log("Added " + req.body.word)
-            res.json(data)
+    word = req.body.word
+
+    let options = {
+        method: 'GET',
+        url: 'https://wordsapiv1.p.rapidapi.com/words/'+word,
+        headers: {
+          'x-rapidapi-key': process.env.WORD_API_KEY,
+          'x-rapidapi-host': 'wordsapiv1.p.rapidapi.com'
+        }
+    }
+
+    axios.request(options)
+        .then(async data => {
+            record = word_parse_functions.parse_word(data.data)
+            const instance = new WordModel({
+                word: word,
+                definitions: record,
+                link: 'https://translate.google.com/?hl=en&sl=auto&tl=es&text='+word+'&op=translate',
+            })
+
+            await instance.save()
+                .then(data => {
+                    console.log("Added " + req.body.word)
+                    res.json({isAdded: true, message: 'Added word' + word})
+                })
+                .catch(err => {
+                    res.json(err)
+                })
         })
         .catch(err => {
-            res.json(err)
+            res.json({isAdded: false, message: 'Word not found'})
         })
 })
 
 module.exports = router 
+
+
+/**
+ * Format of the object being sent to database
+ * const example = {
+ *     word: response.word,
+ *     definitions: [{
+ *         definition: '',
+ *         partsOfSpeech: '',
+ *         synonym: [],    
+ *     }],
+ *     link: ''  
+ * }
+ */ 
