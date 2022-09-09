@@ -93,7 +93,7 @@ function createUser() {
 
     bcrypt.genSalt(saltRounds, function (err, salt) {
         bcrypt.hash(password, salt, function (err, hash) {
-            const user = new UserModel({ email: email, password: hash })
+            const user = new UserModel({ email: email, password: hash , words: []})
             user.save(err => {
                 if (err) {
                     console.log('Error in saving' + err)
