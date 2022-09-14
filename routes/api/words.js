@@ -33,7 +33,6 @@ router.use( async(req, res, next) => {
 
 //Get all words 
 router.get('/', (req, res) => {
-    console.log(res.locals.email)
     email = res.locals.email
 
     const instance = UserModel.findOne({email: email})
@@ -46,16 +45,18 @@ router.get('/', (req, res) => {
 })
 
 //Delete a word by word param
-router.delete('/:word', (req, res) => {
+router.delete('/:word', async (req, res) => {
     email = res.locals.email
+    wordP = req.params.word
 
-    const instance = UserModel.find({email: email})
-        .then(data => {
-            console.log('Delete')
-        })
-        .catch(err => {
-            res.json(err)
-        })
+    const instance = await UserModel.findOne({email: email})
+    if (!instance) {
+        res.json({'error': true})
+    } 
+    const newWords = instance.words.filter(word => word.word !== wordP)
+    instance.words = newWords
+    await instance.save()
+    res.json({'isSuccess': true, 'message': 'Deleted ' + wordP})
 })
 
 /** Post a word */
