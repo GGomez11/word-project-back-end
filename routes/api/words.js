@@ -1,6 +1,6 @@
 const express = require('express')
 const router = express.Router()
-const WordModel = require('../../models/Word')
+const UserModel = require('../../models/User')
 const token_functions = require('../../services/token_functions')
 const word_parse_functions = require('../../services/word_parse_functions')
 const jwt = require('jsonwebtoken')
@@ -15,8 +15,10 @@ router.use( async(req, res, next) => {
     
     const token = token_functions.extractToken(req)
     try {
-        const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
-        if (isValid === undefined) {
+        const decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
+        email = decoded.email
+        res.locals.email = email
+        if (decoded === undefined) {
             res.status(403).json({"isValid": false})
         } else {
             next()
@@ -31,54 +33,36 @@ router.use( async(req, res, next) => {
 
 //Get all words 
 router.get('/', (req, res) => {
-    const instance = WordModel.find()
+    email = res.locals.email
+
+    const instance = UserModel.findOne({email: email})
         .then(data => {
-            res.json({words: data, isValid: true})
+            res.json({words: data.words, isValid: true})
         })
         .catch(err => {
             res.json({ message: "Error" })
         })
 })
 
-//Get a word by word
-router.get('/:word', (req, res) => {
-    const instance = WordModel.find({ word: req.params.word })
-        .then(data => {
-            res.json(data)
-        })
-        .catch(err => {
-            res.json(err)
-        })
-})
-
-//Kept for future reference
-// //Delete a word by id
-// router.delete('/:id', (req,res) => {
-//     const instance = WordModel.remove({_id: req.params.id})
-//     .then(data => {
-//         res.json(instance)
-//     })
-//     .catch(err => {
-//         console.log(err)
-//     })
-// })
-
 //Delete a word by word param
-router.delete('/:word', (req, res) => {
-    /** creating an instance (document) of WordModel */
-    const instance = WordModel.deleteOne({ word: req.params.word })
-        .then(data => {
-            console.log("Deleted " + req.params.word)
-            res.json(instance)
-        })
-        .catch(err => {
-            res.json(err)
-        })
+router.delete('/:word', async (req, res) => {
+    email = res.locals.email
+    wordP = req.params.word
+
+    const instance = await UserModel.findOne({email: email})
+    if (!instance) {
+        res.json({'error': true})
+    } 
+    const newWords = instance.words.filter(word => word.word !== wordP)
+    instance.words = newWords
+    await instance.save()
+    res.json({'isSuccess': true, 'message': 'Deleted ' + wordP})
 })
 
 /** Post a word */
-router.post('/', (req, res) => {
+router.post('/word', (req, res) => {
     word = req.body.word
+    email = res.locals.email
 
     let options = {
         method: 'GET',
@@ -92,12 +76,19 @@ router.post('/', (req, res) => {
     axios.request(options)
         .then(async data => {
             record = word_parse_functions.parse_word(data.data)
-            const instance = new WordModel({
+            
+            const newWord = {
                 word: word,
                 definitions: record,
                 link: 'https://translate.google.com/?hl=en&sl=auto&tl=es&text='+word+'&op=translate',
-            })
+            }
 
+            const instance = await UserModel.findOne({
+                email: email
+            })
+            
+            instance.words = [...instance.words, newWord]
+            console.log(instance)
             await instance.save()
                 .then(data => {
                     console.log("Added " + req.body.word)
