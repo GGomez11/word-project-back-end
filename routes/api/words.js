@@ -11,9 +11,8 @@ router.use( async(req, res, next) => {
     
     if(!req.headers.authorization) {
         res.status(401).json({"message": "Pass Authorization Header"})
-    }
-    
-    const token = token_functions.extractToken(req)
+    } else {
+        const token = token_functions.extractToken(req)
     try {
         const decoded = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
         email = decoded.email
@@ -29,6 +28,7 @@ router.use( async(req, res, next) => {
                 "message": 'Error verifying token'
             })
     }       
+    }
 })
 
 //Get all words 
