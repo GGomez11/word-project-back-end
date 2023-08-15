@@ -35,6 +35,7 @@ router.use( async(req, res, next) => {
 router.get('/', (req, res) => {
     email = res.locals.email
 
+    console.log('hit')
     const instance = UserModel.findOne({email: email})
         .then(data => {
             res.json({words: data.words, isValid: true})
