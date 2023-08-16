@@ -69,7 +69,7 @@ router.post('/register', async (req, res) => {
             "message": "Error creating account."
         })
     } else {
-        createUser()
+        await createUser()
         res.json({
             "createdUser": true,
             "message": "User created"
@@ -89,23 +89,26 @@ function extractCredentials(req) {
 }
 
 function createUser() {
-    saltRounds = 10
+    return new Promise((resolve) => {
+        saltRounds = 10
 
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-        bcrypt.hash(password, salt, function (err, hash) {
-            const user = new UserModel({ email: email, password: hash , words: []})
-            user.save(err => {
-                if (err) {
-                    console.log('Error in saving' + err)
-                    res.json({
-                        "createdUser": false,
-                        "message": "Error creating user"
-                    })
-                }
-                console.log('Created new user')
-            })
+        bcrypt.genSalt(saltRounds, function (err, salt) {
+            bcrypt.hash(password, salt, function (err, hash) {
+                const user = new UserModel({ email: email, password: hash , words: []})
+                user.save(err => {
+                    if (err) {
+                        console.log('Error in saving' + err)
+                        res.json({
+                            "createdUser": false,
+                            "message": "Error creating user"
+                        })
+                    }
+                    resolve('success')
+                })
+            });
         });
-    });
+    })
+   
 }
 
 async function checkIfEmailUsed() {
