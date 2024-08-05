@@ -3,7 +3,7 @@ const router = express.Router()
 const bcrypt = require('bcrypt')
 const UserModel = require('../../models/User')
 const jwt = require('jsonwebtoken')
-
+const token_functions = require('../../services/token_functions')
 
 router.use((req, res, next) => {
     console.log('Time:', Date.now())
@@ -13,7 +13,7 @@ router.use((req, res, next) => {
 })
 
 router.post('/verify', async (req, res) => {
-    const token = extractToken(req)
+    const token = token_functions.extractToken(req)
     try {
         const isValid = await jwt.verify(token, process.env.ACCESS_TOKEN_SECRET)
         if (isValid !== undefined) {
@@ -66,10 +66,10 @@ router.post('/register', async (req, res) => {
     if (isEmailUsed) {
         res.json({
             "createdUser": false,
-            "message": "Email is already used"
+            "message": "Error creating account."
         })
     } else {
-        createUser()
+        await createUser()
         res.json({
             "createdUser": true,
             "message": "User created"
@@ -88,31 +88,27 @@ function extractCredentials(req) {
     password = decodedCredentials.split(':')[1]
 }
 
-function extractToken(req) {
-    encodedToken = req.headers.authorization 
-    bufferObj = Buffer.from(encodedToken, "base64")
-    decodedCredentials = bufferObj.toString('utf8').split(' ')[1]
-    return decodedCredentials
-}
-
 function createUser() {
-    saltRounds = 10
+    return new Promise((resolve) => {
+        saltRounds = 10
 
-    bcrypt.genSalt(saltRounds, function (err, salt) {
-        bcrypt.hash(password, salt, function (err, hash) {
-            const user = new UserModel({ email: email, password: hash })
-            user.save(err => {
-                if (err) {
-                    console.log('Error in saving' + err)
-                    res.json({
-                        "createdUser": false,
-                        "message": "Error creating user"
-                    })
-                }
-                console.log('Created new user')
-            })
+        bcrypt.genSalt(saltRounds, function (err, salt) {
+            bcrypt.hash(password, salt, function (err, hash) {
+                const user = new UserModel({ email: email, password: hash , words: []})
+                user.save(err => {
+                    if (err) {
+                        console.log('Error in saving' + err)
+                        res.json({
+                            "createdUser": false,
+                            "message": "Error creating user"
+                        })
+                    }
+                    resolve('success')
+                })
+            });
         });
-    });
+    })
+   
 }
 
 async function checkIfEmailUsed() {
